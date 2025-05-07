@@ -1,5 +1,7 @@
-use crate::fonts::{FontConfig, Pattern};
-use crate::FunctionLayer;
+use crate::{
+    fonts::{FontConfig, Pattern},
+    function_layer::FunctionLayer,
+};
 use anyhow::Error;
 use cairo::FontFace;
 use freetype::Library as FtLibrary;
