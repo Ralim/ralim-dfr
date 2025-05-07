@@ -43,11 +43,11 @@ fn wait_for_state(state: ShiftState) -> i32 {
 
 impl PixelShiftManager {
     pub fn new() -> PixelShiftManager {
-        let pixel_progress = rand::thread_rng().gen_range(0..PIXEL_SHIFT_WIDTH_PX);
+        let pixel_progress = rand::rng().random_range(0..PIXEL_SHIFT_WIDTH_PX);
 
         // add some randomness to the relationship between shifting on the x and y axis
         // so that pixel shifting doesn't follow the same 2d pattern every time
-        let y_constant: f64 = rand::thread_rng().gen_range(0..PIXEL_SHIFT_HEIGHT_PX * 2) as f64;
+        let y_constant: f64 = rand::rng().random_range(0..PIXEL_SHIFT_HEIGHT_PX * 2) as f64;
 
         PixelShiftManager {
             last_active: Instant::now(),
