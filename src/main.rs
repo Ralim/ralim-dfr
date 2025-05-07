@@ -1,8 +1,12 @@
-use anyhow::{anyhow, Result};
-use cairo::{Antialias, Context, Format, ImageSurface, Surface};
+use anyhow::Result;
+use button_image::ButtonImage;
+use cairo::{Context, Format, ImageSurface, Surface};
 use chrono::{Local, Locale, Timelike};
+use constants::{
+    BUTTON_COLOR_ACTIVE, BUTTON_COLOR_INACTIVE, BUTTON_SPACING_PX, ICON_SIZE, TIMEOUT_MS,
+};
 use drm::control::ClipRect;
-use freedesktop_icons::lookup;
+use graphics_load::try_load_image;
 use input::{
     event::{
         device::DeviceEvent,
@@ -15,7 +19,7 @@ use input::{
 use input_linux::{uinput::UInputHandle, EventKind, Key, SynchronizeKind};
 use input_linux_sys::{input_event, input_id, timeval, uinput_setup};
 use libc::{c_char, O_ACCMODE, O_RDONLY, O_RDWR, O_WRONLY};
-use librsvg_rebind::{prelude::HandleExt, Handle, Rectangle};
+use librsvg_rebind::{prelude::HandleExt, Rectangle};
 use nix::{
     errno::Errno,
     sys::{
@@ -33,13 +37,16 @@ use std::{
         unix::{fs::OpenOptionsExt, io::OwnedFd},
     },
     panic::{self, AssertUnwindSafe},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 mod backlight;
+mod button_image;
 mod config;
+mod constants;
 mod display;
 mod fonts;
+mod graphics_load;
 mod pixel_shift;
 
 use crate::config::ConfigManager;
@@ -48,108 +55,11 @@ use config::{ButtonConfig, Config};
 use display::DrmBackend;
 use pixel_shift::{PixelShiftManager, PIXEL_SHIFT_WIDTH_PX};
 
-const BUTTON_SPACING_PX: i32 = 16;
-const BUTTON_COLOR_INACTIVE: f64 = 0.200;
-const BUTTON_COLOR_ACTIVE: f64 = 0.400;
-const ICON_SIZE: i32 = 48;
-const TIMEOUT_MS: i32 = 10 * 1000;
-
-enum ButtonImage {
-    Text(String),
-    Svg(Handle),
-    Bitmap(ImageSurface),
-    Time(String, String),
-}
-
 struct Button {
     image: ButtonImage,
     changed: bool,
     active: bool,
     action: Key,
-}
-
-fn try_load_svg(path: &str) -> Result<ButtonImage> {
-    Ok(ButtonImage::Svg(
-        Handle::from_file(path)?.ok_or(anyhow!("failed to load image"))?,
-    ))
-}
-
-fn try_load_png(path: impl AsRef<Path>) -> Result<ButtonImage> {
-    let mut file = File::open(path)?;
-    let surf = ImageSurface::create_from_png(&mut file)?;
-    if surf.height() == ICON_SIZE && surf.width() == ICON_SIZE {
-        return Ok(ButtonImage::Bitmap(surf));
-    }
-    let resized = ImageSurface::create(Format::ARgb32, ICON_SIZE, ICON_SIZE).unwrap();
-    let c = Context::new(&resized).unwrap();
-    c.scale(
-        ICON_SIZE as f64 / surf.width() as f64,
-        ICON_SIZE as f64 / surf.height() as f64,
-    );
-    c.set_source_surface(surf, 0.0, 0.0).unwrap();
-    c.set_antialias(Antialias::Best);
-    c.paint().unwrap();
-    Ok(ButtonImage::Bitmap(resized))
-}
-
-fn try_load_image(name: impl AsRef<str>, theme: Option<impl AsRef<str>>) -> Result<ButtonImage> {
-    let name = name.as_ref();
-    let locations;
-
-    // Load list of candidate locations
-    if let Some(theme) = theme {
-        // Freedesktop icons
-        let theme = theme.as_ref();
-        let candidates = vec![
-            lookup(name)
-                .with_cache()
-                .with_theme(theme)
-                .with_size(ICON_SIZE as u16)
-                .force_svg()
-                .find(),
-            lookup(name)
-                .with_cache()
-                .with_theme(theme)
-                .force_svg()
-                .find(),
-        ];
-
-        // .flatten() removes `None` and unwraps `Some` values
-        locations = candidates.into_iter().flatten().collect();
-    } else {
-        // Standard file icons
-        locations = vec![
-            PathBuf::from(format!("/etc/tiny-dfr/{name}.svg")),
-            PathBuf::from(format!("/etc/tiny-dfr/{name}.png")),
-            PathBuf::from(format!("/usr/share/tiny-dfr/{name}.svg")),
-            PathBuf::from(format!("/usr/share/tiny-dfr/{name}.png")),
-        ];
-    };
-
-    // Try to load each candidate
-    let mut last_err = anyhow!("no suitable icon path was found"); // in case locations is empty
-
-    for location in locations {
-        let result = match location.extension().and_then(|s| s.to_str()) {
-            Some("png") => try_load_png(&location),
-            Some("svg") => try_load_svg(
-                location
-                    .to_str()
-                    .ok_or(anyhow!("image path is not unicode"))?,
-            ),
-            _ => Err(anyhow!("invalid file extension")),
-        };
-
-        match result {
-            Ok(image) => return Ok(image),
-            Err(err) => {
-                last_err = err.context(format!("while loading path {}", location.display()));
-            }
-        };
-    }
-
-    // if function hasn't returned by now, all sources have been exhausted
-    Err(last_err.context(format!("failed loading all possible paths for icon {name}")))
 }
 
 impl Button {
@@ -160,8 +70,8 @@ impl Button {
             Button::new_icon(&icon, cfg.theme, cfg.action)
         } else if let Some(time) = cfg.time {
             let locale = match cfg.locale {
-                 Some(l) => l,
-                 None => "POSIX".to_string()
+                Some(l) => l,
+                None => "POSIX".to_string(),
             };
             Button::new_time(cfg.action, time, locale)
         } else {
@@ -228,36 +138,36 @@ impl Button {
                 c.fill().unwrap();
             }
             ButtonImage::Time(format, locale) => {
-                 let current_time = Local::now();
-                 let current_locale = Locale::try_from(locale.as_str()).unwrap_or(Locale::POSIX);
-                 let formatted_time;
-                 if format == "24hr" {
-                     formatted_time = format!(
-                     "{}:{}    {} {} {}",
-                      current_time.format_localized("%H", current_locale),
-                      current_time.format_localized("%M", current_locale),
-                      current_time.format_localized("%a", current_locale),
-                      current_time.format_localized("%-e", current_locale),
-                      current_time.format_localized("%b", current_locale)
-                 );
-                 } else {
-                     formatted_time = format!(
-                     "{}:{} {}    {} {} {}",
-                     current_time.format_localized("%-l", current_locale),
-                     current_time.format_localized("%M", current_locale),
-                     current_time.format_localized("%p", current_locale),
-                     current_time.format_localized("%a", current_locale),
-                     current_time.format_localized("%-e", current_locale),
-                     current_time.format_localized("%b", current_locale)
-                 );
-                 }
-                 let time_extents = c.text_extents(&formatted_time).unwrap();
-                 c.move_to(
-                     button_left_edge + (button_width as f64 / 2.0 - time_extents.width() / 2.0).round(),
-                     y_shift + (height as f64 / 2.0 + time_extents.height() / 2.0).round()
-                 );
-                 c.show_text(&formatted_time).unwrap();
-             }
+                let current_time = Local::now();
+                let current_locale = Locale::try_from(locale.as_str()).unwrap_or(Locale::POSIX);
+                let formatted_time = if format == "24hr" {
+                    format!(
+                        "{}:{}    {} {} {}",
+                        current_time.format_localized("%H", current_locale),
+                        current_time.format_localized("%M", current_locale),
+                        current_time.format_localized("%a", current_locale),
+                        current_time.format_localized("%-e", current_locale),
+                        current_time.format_localized("%b", current_locale)
+                    )
+                } else {
+                    format!(
+                        "{}:{} {}    {} {} {}",
+                        current_time.format_localized("%-l", current_locale),
+                        current_time.format_localized("%M", current_locale),
+                        current_time.format_localized("%p", current_locale),
+                        current_time.format_localized("%a", current_locale),
+                        current_time.format_localized("%-e", current_locale),
+                        current_time.format_localized("%b", current_locale)
+                    )
+                };
+                let time_extents = c.text_extents(&formatted_time).unwrap();
+                c.move_to(
+                    button_left_edge
+                        + (button_width as f64 / 2.0 - time_extents.width() / 2.0).round(),
+                    y_shift + (height as f64 / 2.0 + time_extents.height() / 2.0).round(),
+                );
+                c.show_text(&formatted_time).unwrap();
+            }
         }
     }
     fn set_active<F>(&mut self, uinput: &mut UInputHandle<F>, active: bool)
@@ -297,7 +207,7 @@ impl FunctionLayer {
                         stretch = 1;
                     }
                     if cfg.time.is_some() {
-                        stretch = stretch * 3;
+                        stretch *= 3;
                     }
                     **state += stretch;
                     Some((i, Button::with_config(cfg)))
@@ -645,9 +555,11 @@ fn real_main(drm: &mut DrmBackend) {
 
         let current_minute = now.minute();
         for button in &mut layers[active_layer].buttons {
-            if matches!(button.1.image, ButtonImage::Time(_, _)) && (current_minute != last_redraw_minute) {
-                 needs_complete_redraw = true;
-                 last_redraw_minute = current_minute;
+            if matches!(button.1.image, ButtonImage::Time(_, _))
+                && (current_minute != last_redraw_minute)
+            {
+                needs_complete_redraw = true;
+                last_redraw_minute = current_minute;
             }
         }
 
