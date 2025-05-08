@@ -5,4 +5,5 @@ pub enum ButtonImage {
     Svg(Handle),
     Bitmap(ImageSurface),
     Time(String, String),
+    Processor(),
 }

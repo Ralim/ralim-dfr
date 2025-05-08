@@ -2,10 +2,11 @@ use cairo::Context;
 use chrono::{Local, Locale};
 use input_linux::{uinput::UInputHandle, Key};
 use librsvg_rebind::{prelude::HandleExt, Rectangle};
+use procfs::{CurrentSI, KernelStats};
 use std::os::fd::AsRawFd;
 
 use crate::{
-    button_image::ButtonImage, config::ButtonConfig, constants::ICON_SIZE,
+    button_image::ButtonImage, config::ButtonConfig, constants::ICON_SIZE, cpu_uage::CPUUsage,
     graphics_load::try_load_image, toggle_key,
 };
 
@@ -14,6 +15,7 @@ pub struct Button {
     pub changed: bool,
     pub active: bool,
     pub action: Key,
+    pub last_cpu: CPUUsage,
 }
 
 impl Button {
@@ -28,6 +30,8 @@ impl Button {
                 None => "POSIX".to_string(),
             };
             Button::new_time(cfg.action, time, locale)
+        } else if let Some(_cpu) = cfg.processor {
+            Button::new_processor(cfg.action)
         } else {
             panic!("Invalid config, a button must have either Text, Icon or Time")
         }
@@ -38,6 +42,7 @@ impl Button {
             active: false,
             changed: false,
             image: ButtonImage::Text(text),
+            last_cpu: CPUUsage::default(),
         }
     }
     fn new_icon(path: impl AsRef<str>, theme: Option<impl AsRef<str>>, action: Key) -> Button {
@@ -47,6 +52,7 @@ impl Button {
             image,
             active: false,
             changed: false,
+            last_cpu: CPUUsage::default(),
         }
     }
 
@@ -56,10 +62,20 @@ impl Button {
             active: false,
             changed: false,
             image: ButtonImage::Time(format, locale),
+            last_cpu: CPUUsage::default(),
+        }
+    }
+    fn new_processor(action: Key) -> Button {
+        Button {
+            action,
+            active: false,
+            changed: false,
+            image: ButtonImage::Processor(),
+            last_cpu: CPUUsage::default(),
         }
     }
     pub fn render(
-        &self,
+        &mut self,
         c: &Context,
         height: i32,
         button_left_edge: f64,
@@ -121,6 +137,22 @@ impl Button {
                     y_shift + (height as f64 / 2.0 + time_extents.height() / 2.0).round(),
                 );
                 c.show_text(&formatted_time).unwrap();
+            }
+            ButtonImage::Processor() => {
+                let new_readings = self.last_cpu.sample();
+
+                let text = format!(
+                    "{}/{}/{}",
+                    new_readings.system, new_readings.user, new_readings.idle
+                );
+
+                let text_extent = c.text_extents(&text).unwrap();
+                c.move_to(
+                    button_left_edge
+                        + (button_width as f64 / 2.0 - text_extent.width() / 2.0).round(),
+                    y_shift + (height as f64 / 2.0 + text_extent.height() / 2.0).round(),
+                );
+                c.show_text(&text).unwrap();
             }
         }
     }

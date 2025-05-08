@@ -41,6 +41,7 @@ mod button;
 mod button_image;
 mod config;
 mod constants;
+mod cpu_uage;
 mod display;
 mod fonts;
 mod function_layer;
