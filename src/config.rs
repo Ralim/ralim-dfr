@@ -38,7 +38,6 @@ struct ConfigProxy {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-
 pub struct ButtonConfig {
     #[serde(alias = "Svg")]
     pub icon: Option<String>,

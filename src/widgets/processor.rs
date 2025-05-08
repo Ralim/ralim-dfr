@@ -9,7 +9,7 @@ pub struct ProcessorWidget {
     changed: bool,
     active: bool,
     action: Key,
-    last_draw_time: Instant,
+    last_sample_time: Instant,
     last_cpu_readings: CPUSample,
 }
 
@@ -21,7 +21,7 @@ impl ProcessorWidget {
             changed: false,
             last_cpu: CPUUsage::default(),
             last_cpu_readings: CPUSample::default(),
-            last_draw_time: Instant::now(),
+            last_sample_time: Instant::now(),
         }
     }
 }
@@ -35,15 +35,18 @@ impl TWidget for ProcessorWidget {
         button_width: u64,
         y_shift: f64,
     ) {
-        if self.last_draw_time.elapsed().as_secs() > 4 {
+        if self.last_sample_time.elapsed().as_secs() > 4 {
             let new_readings = self.last_cpu.sample();
             self.last_cpu_readings = new_readings;
-            self.last_draw_time = Instant::now();
+            self.last_sample_time = Instant::now();
         };
+        // Make text coloured if load is high
+        let scaled_bg = (self.last_cpu_readings.idle as f64) / 100.0;
+        c.set_source_rgb(1.0, scaled_bg, scaled_bg);
 
         let text = format!(
-            "{}/{}/{}",
-            self.last_cpu_readings.system, self.last_cpu_readings.user, self.last_cpu_readings.idle
+            "U: {}% S: {}% I: {}%",
+            self.last_cpu_readings.user, self.last_cpu_readings.system, self.last_cpu_readings.idle
         );
 
         let text_extent = c.text_extents(&text).unwrap();
@@ -67,10 +70,10 @@ impl TWidget for ProcessorWidget {
         self.action
     }
     fn next_draw_time(&self) -> Option<Instant> {
-        Some(self.last_draw_time + Duration::from_secs(5))
+        Some(self.last_sample_time + Duration::from_secs(5))
     }
     fn changed(&self) -> bool {
-        self.changed || self.last_draw_time.elapsed().as_secs() > 4
+        self.changed || self.last_sample_time.elapsed().as_secs() > 4
     }
     fn active(&self) -> bool {
         self.active
