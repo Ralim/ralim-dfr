@@ -36,8 +36,9 @@ struct ConfigProxy {
     media_layer_keys: Option<Vec<ButtonConfig>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
+
 pub struct ButtonConfig {
     #[serde(alias = "Svg")]
     pub icon: Option<String>,

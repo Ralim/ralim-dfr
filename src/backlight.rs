@@ -1,5 +1,4 @@
 use crate::config::Config;
-use crate::TIMEOUT_MS;
 use anyhow::{anyhow, Result};
 use input::event::{
     switch::{Switch, SwitchEvent, SwitchState},
@@ -10,13 +9,13 @@ use std::{
     fs::{self, File, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 const MAX_DISPLAY_BRIGHTNESS: u32 = 509;
 const MAX_TOUCH_BAR_BRIGHTNESS: u32 = 255;
-const BRIGHTNESS_DIM_TIMEOUT: i32 = TIMEOUT_MS * 3; // should be a multiple of TIMEOUT_MS
-const BRIGHTNESS_OFF_TIMEOUT: i32 = TIMEOUT_MS * 6; // should be a multiple of TIMEOUT_MS
+const BRIGHTNESS_DIM_TIMEOUT: Duration = Duration::from_secs(15); // should be a multiple of TIMEOUT_MS
+const BRIGHTNESS_OFF_TIMEOUT: Duration = Duration::from_secs(60); // should be a multiple of TIMEOUT_MS
 const DIMMED_BRIGHTNESS: u32 = 1;
 
 fn read_attr(path: &Path, attr: &str) -> u32 {
@@ -115,12 +114,12 @@ impl BacklightManager {
         }
     }
     pub fn update_backlight(&mut self, cfg: &Config) {
-        let since_last_active = (Instant::now() - self.last_active).as_millis() as u64;
+        let since_last_active = self.last_active.elapsed();
         let new_bl = min(
             self.max_bl,
             if self.lid_state == SwitchState::On {
                 0
-            } else if since_last_active < BRIGHTNESS_DIM_TIMEOUT as u64 {
+            } else if since_last_active < BRIGHTNESS_DIM_TIMEOUT {
                 if cfg.adaptive_brightness {
                     BacklightManager::display_to_touchbar(
                         read_attr(&self.display_bl_path, "brightness"),
@@ -129,7 +128,7 @@ impl BacklightManager {
                 } else {
                     cfg.active_brightness
                 }
-            } else if since_last_active < BRIGHTNESS_OFF_TIMEOUT as u64 {
+            } else if since_last_active < BRIGHTNESS_OFF_TIMEOUT {
                 DIMMED_BRIGHTNESS
             } else {
                 0

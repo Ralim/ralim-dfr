@@ -1,7 +1,5 @@
 use anyhow::Result;
-use button_image::ButtonImage;
 use cairo::{Format, ImageSurface};
-use chrono::{Local, Timelike};
 use constants::TIMEOUT_MS;
 use drm::control::ClipRect;
 use input::{
@@ -13,7 +11,7 @@ use input::{
     },
     Device as InputDevice, Libinput, LibinputInterface,
 };
-use input_linux::{uinput::UInputHandle, EventKind, Key, SynchronizeKind};
+use input_linux::{uinput::UInputHandle, EventKind, Key};
 use input_linux_sys::{input_event, input_id, timeval, uinput_setup};
 use libc::{c_char, O_ACCMODE, O_RDONLY, O_RDWR, O_WRONLY};
 use nix::{
@@ -25,7 +23,6 @@ use nix::{
 };
 use privdrop::PrivDrop;
 use std::{
-    cmp::min,
     collections::HashMap,
     fs::{File, OpenOptions},
     os::{
@@ -34,10 +31,11 @@ use std::{
     },
     panic::{self, AssertUnwindSafe},
     path::Path,
+    time::Instant,
 };
+use widgets::set_widget_active;
 
 mod backlight;
-mod button;
 mod button_image;
 mod config;
 mod constants;
@@ -47,6 +45,7 @@ mod function_layer;
 mod graphics_load;
 mod metrics;
 mod pixel_shift;
+mod widgets;
 
 use crate::config::ConfigManager;
 use backlight::BacklightManager;
@@ -89,19 +88,6 @@ where
         .unwrap();
 }
 
-fn toggle_key<F>(uinput: &mut UInputHandle<F>, code: Key, value: i32)
-where
-    F: AsRawFd,
-{
-    emit(uinput, EventKind::Key, code as u16, value);
-    emit(
-        uinput,
-        EventKind::Synchronize,
-        SynchronizeKind::Report as u16,
-        0,
-    );
-}
-
 fn main() {
     let mut drm = DrmBackend::open_card().unwrap();
     let (height, width) = drm.mode().size();
@@ -133,7 +119,6 @@ fn real_main(drm: &mut DrmBackend) {
     let (db_width, db_height) = drm.fb_info().unwrap().size();
     let mut uinput = UInputHandle::new(OpenOptions::new().write(true).open("/dev/uinput").unwrap());
     let mut backlight = BacklightManager::new();
-    let mut last_redraw_minute = Local::now().minute();
     let mut cfg_mgr = ConfigManager::new();
     let (mut cfg, mut layers) = cfg_mgr.load_config(width);
     let mut pixel_shift = PixelShiftManager::new();
@@ -169,7 +154,7 @@ fn real_main(drm: &mut DrmBackend) {
     uinput.set_evbit(EventKind::Key).unwrap();
     for layer in &layers {
         for button in &layer.buttons {
-            uinput.set_keybit(button.1.action).unwrap();
+            uinput.set_keybit(button.1.get_action()).unwrap();
         }
     }
     let mut dev_name_c = [0 as c_char; 80];
@@ -199,29 +184,25 @@ fn real_main(drm: &mut DrmBackend) {
             needs_complete_redraw = true;
         }
 
-        let now = Local::now();
-        let ms_left = ((60 - now.second()) * 1000) as i32;
-        let mut next_timeout_ms = min(ms_left, TIMEOUT_MS);
+        // Walk all widgets in current layer; and find which one needs a re-draw soonest
+        let mut next_redraw_time = layers[active_layer]
+            .buttons
+            .iter()
+            .filter_map(|(_, w)| w.next_draw_time())
+            .min()
+            .unwrap_or(Instant::now() + TIMEOUT_MS);
 
         if cfg.enable_pixel_shift {
             let (pixel_shift_needs_redraw, pixel_shift_next_timeout_ms) = pixel_shift.update();
             if pixel_shift_needs_redraw {
                 needs_complete_redraw = true;
             }
-            next_timeout_ms = min(next_timeout_ms, pixel_shift_next_timeout_ms);
-        }
-
-        let current_minute = now.minute();
-        for button in &mut layers[active_layer].buttons {
-            if matches!(button.1.image, ButtonImage::Time(_, _))
-                && (current_minute != last_redraw_minute)
-            {
-                needs_complete_redraw = true;
-                last_redraw_minute = current_minute;
+            if pixel_shift_next_timeout_ms < next_redraw_time {
+                next_redraw_time = pixel_shift_next_timeout_ms
             }
         }
 
-        if needs_complete_redraw || layers[active_layer].buttons.iter().any(|b| b.1.changed) {
+        if needs_complete_redraw || layers[active_layer].buttons.iter().any(|b| b.1.changed()) {
             let shift = if cfg.enable_pixel_shift {
                 pixel_shift.get()
             } else {
@@ -241,9 +222,11 @@ fn real_main(drm: &mut DrmBackend) {
             needs_complete_redraw = false;
         }
 
+        let wait_time = next_redraw_time.saturating_duration_since(Instant::now());
+
         match epoll.wait(
             &mut [EpollEvent::new(EpollFlags::EPOLLIN, 0)],
-            next_timeout_ms as u16,
+            wait_time.as_millis() as u16,
         ) {
             Err(Errno::EINTR) | Ok(_) => 0,
             e => e.unwrap(),
@@ -281,9 +264,11 @@ fn real_main(drm: &mut DrmBackend) {
                             let y = dn.y_transformed(height as u32);
                             if let Some(btn) = layers[active_layer].hit(width, height, x, y, None) {
                                 touches.insert(dn.seat_slot(), (active_layer, btn));
-                                layers[active_layer].buttons[btn]
-                                    .1
-                                    .set_active(&mut uinput, true);
+                                set_widget_active(
+                                    &mut layers[active_layer].buttons[btn].1,
+                                    &mut uinput,
+                                    true,
+                                );
                             }
                         }
                         TouchEvent::Motion(mtn) => {
@@ -297,14 +282,18 @@ fn real_main(drm: &mut DrmBackend) {
                             let hit = layers[active_layer]
                                 .hit(width, height, x, y, Some(btn))
                                 .is_some();
-                            layers[layer].buttons[btn].1.set_active(&mut uinput, hit);
+                            set_widget_active(&mut layers[layer].buttons[btn].1, &mut uinput, hit);
                         }
                         TouchEvent::Up(up) => {
                             if !touches.contains_key(&up.seat_slot()) {
                                 continue;
                             }
                             let (layer, btn) = *touches.get(&up.seat_slot()).unwrap();
-                            layers[layer].buttons[btn].1.set_active(&mut uinput, false);
+                            set_widget_active(
+                                &mut layers[layer].buttons[btn].1,
+                                &mut uinput,
+                                false,
+                            );
                         }
                         _ => {}
                     }

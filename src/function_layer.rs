@@ -1,15 +1,15 @@
 use crate::{
-    button::Button,
     config::{ButtonConfig, Config},
     constants::{BUTTON_COLOR_ACTIVE, BUTTON_COLOR_INACTIVE, BUTTON_SPACING_PX},
     pixel_shift::PIXEL_SHIFT_WIDTH_PX,
+    widgets::{new_widget_from_config, TWidget},
 };
 use cairo::{Context, Surface};
 use drm::control::ClipRect;
 
 #[derive(Default)]
 pub struct FunctionLayer {
-    pub buttons: Vec<(usize, Button)>,
+    pub buttons: Vec<(usize, Box<dyn TWidget>)>,
     pub virtual_button_count: usize,
 }
 
@@ -31,10 +31,10 @@ impl FunctionLayer {
                         stretch = 1;
                     }
                     if cfg.time.is_some() {
-                        stretch *= 3;
+                        stretch *= 2;
                     }
                     **state += stretch;
-                    Some((i, Button::with_config(cfg)))
+                    Some((i, new_widget_from_config(cfg)))
                 })
                 .collect(),
             virtual_button_count,
@@ -87,7 +87,7 @@ impl FunctionLayer {
             let (start, button) = &mut self.buttons[i];
             let start = *start;
 
-            if !button.changed && !complete_redraw {
+            if !button.changed() && !complete_redraw {
                 continue;
             };
 
@@ -100,7 +100,7 @@ impl FunctionLayer {
                 + ((end - start - 1) as f64 * (virtual_button_width + BUTTON_SPACING_PX as f64))
                     .floor();
 
-            let color = if button.active {
+            let color = if button.active() {
                 BUTTON_COLOR_ACTIVE
             } else if config.show_button_outlines {
                 BUTTON_COLOR_INACTIVE
@@ -162,7 +162,7 @@ impl FunctionLayer {
                 pixel_shift_y,
             );
 
-            button.changed = false;
+            button.reset_changed();
 
             if !complete_redraw {
                 modified_regions.push(ClipRect::new(

@@ -1,11 +1,11 @@
 use crate::TIMEOUT_MS;
 use rand::Rng;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
-const INTERVAL_MS: i32 = TIMEOUT_MS; // should be a multiple of TIMEOUT_MS
-const PROLONGED_INTERVAL_MS: i32 = TIMEOUT_MS * 5; // should be a multiple of TIMEOUT_MS and more than INTERVAL_MS
-const ANIMATION_INTERVAL_MS: i32 = 200; // should be less than TIMEOUT_MS
-const ANIMATION_DURATION_MS: i32 = 4000; // should be a multiple of ANIMATION_INTERVAL_MS
+const INTERVAL_MS: Duration = TIMEOUT_MS; // should be a multiple of TIMEOUT_MS
+const PROLONGED_INTERVAL_MS: Duration = Duration::from_secs(25); // should be a multiple of TIMEOUT_MS and more than INTERVAL_MS
+const ANIMATION_INTERVAL_MS: Duration = Duration::from_millis(200); // should be less than TIMEOUT_MS
+const ANIMATION_DURATION_MS: Duration = Duration::from_millis(4000); // should be a multiple of ANIMATION_INTERVAL_MS
 
 // This is the total range on the x-axis that pixels will shift by over time, ie. they will shift by
 // PIXEL_SHIFT_WIDTH_PX / 2 to the right and to the left.
@@ -33,7 +33,7 @@ pub struct PixelShiftManager {
     state: ShiftState,
 }
 
-fn wait_for_state(state: ShiftState) -> i32 {
+fn wait_for_state(state: ShiftState) -> Duration {
     match state {
         ShiftState::ShiftingSubpixel => ANIMATION_INTERVAL_MS,
         ShiftState::Normal => INTERVAL_MS,
@@ -60,21 +60,20 @@ impl PixelShiftManager {
         }
     }
 
-    pub fn update(&mut self) -> (bool, i32) {
-        let time_now = Instant::now();
-        let since_last_pixel_shift = (time_now - self.last_active).as_millis() as i32;
-
-        if since_last_pixel_shift < wait_for_state(self.state) {
-            return (false, i32::MAX);
+    pub fn update(&mut self) -> (bool, Instant) {
+        let state_duration = wait_for_state(self.state);
+        if self.last_active.elapsed() < state_duration {
+            return (false, self.last_active + state_duration);
         }
-        self.last_active = time_now;
+        self.last_active = Instant::now();
 
         match self.state {
             ShiftState::Normal => {
                 self.state = ShiftState::ShiftingSubpixel;
             }
             ShiftState::ShiftingSubpixel => {
-                let shift_by = ANIMATION_INTERVAL_MS as f64 / ANIMATION_DURATION_MS as f64;
+                let shift_by = ANIMATION_INTERVAL_MS.as_millis() as f64
+                    / ANIMATION_DURATION_MS.as_millis() as f64;
                 self.subpixel_progress += shift_by * self.direction as f64;
                 if self.subpixel_progress <= -0.99 || self.subpixel_progress >= 0.99 {
                     self.pixel_progress = (self.direction + self.pixel_progress as i64) as u64;
@@ -91,7 +90,7 @@ impl PixelShiftManager {
                 self.subpixel_progress = 0.0;
             }
         }
-        (true, wait_for_state(self.state))
+        (true, Instant::now() + wait_for_state(self.state))
     }
 
     pub fn get(&self) -> (f64, f64) {
