@@ -45,6 +45,7 @@ pub struct ButtonConfig {
     pub theme: Option<String>,
     pub time: Option<String>,
     pub processor: Option<String>,
+    pub memory: Option<String>,
     pub locale: Option<String>,
     pub action: Key,
     pub stretch: Option<usize>,
@@ -89,14 +90,15 @@ fn load_config(width: u16) -> (Config, [FunctionLayer; 2]) {
             layer.insert(
                 0,
                 ButtonConfig {
-                    icon: None,
                     text: Some("esc".into()),
-                    theme: None,
                     action: Key::Esc,
+                    icon: None,
+                    theme: None,
                     stretch: None,
                     time: None,
                     locale: None,
                     processor: None,
+                    memory: None,
                 },
             );
         }

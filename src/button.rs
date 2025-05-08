@@ -2,12 +2,15 @@ use cairo::Context;
 use chrono::{Local, Locale};
 use input_linux::{uinput::UInputHandle, Key};
 use librsvg_rebind::{prelude::HandleExt, Rectangle};
-use procfs::{CurrentSI, KernelStats};
 use std::os::fd::AsRawFd;
 
 use crate::{
-    button_image::ButtonImage, config::ButtonConfig, constants::ICON_SIZE, cpu_uage::CPUUsage,
-    graphics_load::try_load_image, toggle_key,
+    button_image::ButtonImage,
+    config::ButtonConfig,
+    constants::ICON_SIZE,
+    graphics_load::try_load_image,
+    metrics::{CPUUsage, MemoryUsage},
+    toggle_key,
 };
 
 pub struct Button {
@@ -32,6 +35,8 @@ impl Button {
             Button::new_time(cfg.action, time, locale)
         } else if let Some(_cpu) = cfg.processor {
             Button::new_processor(cfg.action)
+        } else if let Some(_memory) = cfg.memory {
+            Button::new_memory(cfg.action)
         } else {
             panic!("Invalid config, a button must have either Text, Icon or Time")
         }
@@ -71,6 +76,15 @@ impl Button {
             active: false,
             changed: false,
             image: ButtonImage::Processor(),
+            last_cpu: CPUUsage::default(),
+        }
+    }
+    fn new_memory(action: Key) -> Button {
+        Button {
+            action,
+            active: false,
+            changed: false,
+            image: ButtonImage::Memory(),
             last_cpu: CPUUsage::default(),
         }
     }
@@ -145,6 +159,19 @@ impl Button {
                     "{}/{}/{}",
                     new_readings.system, new_readings.user, new_readings.idle
                 );
+
+                let text_extent = c.text_extents(&text).unwrap();
+                c.move_to(
+                    button_left_edge
+                        + (button_width as f64 / 2.0 - text_extent.width() / 2.0).round(),
+                    y_shift + (height as f64 / 2.0 + text_extent.height() / 2.0).round(),
+                );
+                c.show_text(&text).unwrap();
+            }
+            ButtonImage::Memory() => {
+                let readings = MemoryUsage::sample();
+
+                let text = format!("{}%", readings.used);
 
                 let text_extent = c.text_extents(&text).unwrap();
                 c.move_to(

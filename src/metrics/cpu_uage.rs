@@ -1,5 +1,6 @@
 use procfs::{CpuTime, CurrentSI};
-type Percent = u8;
+
+use super::Percent;
 
 pub struct CPUUsage {
     last_cpu: Option<CpuTime>,
@@ -73,7 +74,7 @@ impl CPUUsage {
             }
         }
         self.last_cpu = new_sample;
-        return measurements;
+        measurements
     }
     fn take_stats() -> Option<CpuTime> {
         if let Ok(new_stats) = procfs::KernelStats::current() {

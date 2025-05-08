@@ -41,11 +41,11 @@ mod button;
 mod button_image;
 mod config;
 mod constants;
-mod cpu_uage;
 mod display;
 mod fonts;
 mod function_layer;
 mod graphics_load;
+mod metrics;
 mod pixel_shift;
 
 use crate::config::ConfigManager;

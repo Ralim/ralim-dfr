@@ -6,4 +6,5 @@ pub enum ButtonImage {
     Bitmap(ImageSurface),
     Time(String, String),
     Processor(),
+    Memory(),
 }
