@@ -91,6 +91,7 @@ where
 fn main() {
     let mut drm = DrmBackend::open_card().unwrap();
     let (height, width) = drm.mode().size();
+    // Run real main and catch panic's so we can show crash message on dfr
     let _ = panic::catch_unwind(AssertUnwindSafe(|| real_main(&mut drm)));
     let crash_bitmap = include_bytes!("crash_bitmap.raw");
     let mut map = drm.map().unwrap();

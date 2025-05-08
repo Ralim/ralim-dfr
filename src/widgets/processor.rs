@@ -1,15 +1,16 @@
 use super::TWidget;
-use crate::metrics::CPUUsage;
+use crate::metrics::{CPUSample, CPUUsage};
 use cairo::Context;
 use input_linux::Key;
 use std::time::{Duration, Instant};
 
 pub struct ProcessorWidget {
-    pub last_cpu: CPUUsage,
-    pub changed: bool,
-    pub active: bool,
-    pub action: Key,
-    pub last_draw_time: Instant,
+    last_cpu: CPUUsage,
+    changed: bool,
+    active: bool,
+    action: Key,
+    last_draw_time: Instant,
+    last_cpu_readings: CPUSample,
 }
 
 impl ProcessorWidget {
@@ -19,6 +20,7 @@ impl ProcessorWidget {
             active: false,
             changed: false,
             last_cpu: CPUUsage::default(),
+            last_cpu_readings: CPUSample::default(),
             last_draw_time: Instant::now(),
         }
     }
@@ -33,11 +35,15 @@ impl TWidget for ProcessorWidget {
         button_width: u64,
         y_shift: f64,
     ) {
-        let new_readings = self.last_cpu.sample();
+        if self.last_draw_time.elapsed().as_secs() > 4 {
+            let new_readings = self.last_cpu.sample();
+            self.last_cpu_readings = new_readings;
+            self.last_draw_time = Instant::now();
+        };
 
         let text = format!(
             "{}/{}/{}",
-            new_readings.system, new_readings.user, new_readings.idle
+            self.last_cpu_readings.system, self.last_cpu_readings.user, self.last_cpu_readings.idle
         );
 
         let text_extent = c.text_extents(&text).unwrap();
@@ -46,7 +52,6 @@ impl TWidget for ProcessorWidget {
             y_shift + (height as f64 / 2.0 + text_extent.height() / 2.0).round(),
         );
         c.show_text(&text).unwrap();
-        self.last_draw_time = Instant::now();
     }
     fn set_active(&mut self, active: bool) -> bool {
         if self.active != active {
