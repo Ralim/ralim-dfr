@@ -12,9 +12,12 @@ pub struct MemorySample {
 impl MemoryUsage {
     pub fn sample() -> MemorySample {
         if let Some(sample) = Self::take_stats() {
-            let available_mem = sample.mem_available.unwrap_or_default();
+            let mut consumed_memory = sample.mem_total - sample.mem_free;
+            // Dont count cached memory as it can be freed
+            let cached = sample.cached;
+            consumed_memory = consumed_memory.saturating_sub(cached);
             MemorySample {
-                used: 100_u8 - ((available_mem * 100) / sample.mem_total) as u8,
+                used: ((consumed_memory * 100) / sample.mem_total) as u8,
             }
         } else {
             MemorySample::default()

@@ -21,7 +21,7 @@ impl ProcessorWidget {
             changed: false,
             last_cpu: CPUUsage::default(),
             last_cpu_readings: CPUSample::default(),
-            last_sample_time: Instant::now(),
+            last_sample_time: Instant::now() - Duration::from_millis(4500),
         }
     }
 }
@@ -41,8 +41,10 @@ impl TWidget for ProcessorWidget {
             self.last_sample_time = Instant::now();
         };
         // Make text coloured if load is high
-        let scaled_bg = (self.last_cpu_readings.idle as f64) / 100.0;
-        c.set_source_rgb(1.0, scaled_bg, scaled_bg);
+        if self.last_cpu_readings.idle > 0 || self.last_cpu_readings.user > 0 {
+            let scaled_bg = (self.last_cpu_readings.idle as f64) / 100.0;
+            c.set_source_rgb(1.0, scaled_bg, scaled_bg);
+        }
 
         let text = format!(
             "U: {}% S: {}% I: {}%",

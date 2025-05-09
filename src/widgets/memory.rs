@@ -35,6 +35,11 @@ impl TWidget for MemoryWidget {
     ) {
         let readings = MemoryUsage::sample();
 
+        // Make text coloured if free memory is low
+        let mut scaled_bg = (readings.used as f64) / 100.0;
+        scaled_bg = 1.0 - scaled_bg.powi(2).clamp(0.0, 1.0);
+        c.set_source_rgb(1.0, scaled_bg, scaled_bg);
+
         let text = format!("{}%", readings.used);
 
         let text_extent = c.text_extents(&text).unwrap();
