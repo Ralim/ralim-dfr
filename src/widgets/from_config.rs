@@ -1,6 +1,6 @@
 use super::{
-    image_button::ImageButton, memory::MemoryWidget, processor::ProcessorWidget, TWidget,
-    TextButton, TimeWidget,
+    battery::BatteryWidget, image_button::ImageButton, memory::MemoryWidget,
+    processor::ProcessorWidget, TWidget, TextButton, TimeWidget,
 };
 use crate::config::ButtonConfig;
 
@@ -15,6 +15,8 @@ pub fn new_widget_from_config(cfg: ButtonConfig) -> Box<dyn TWidget> {
         Box::new(MemoryWidget::new(text, cfg.action))
     } else if let Some(format) = cfg.time {
         Box::new(TimeWidget::new(format, cfg.locale, cfg.action))
+    } else if let Some(text) = cfg.battery {
+        Box::new(BatteryWidget::new(text, cfg.action))
     } else {
         eprintln!("Cant handle config {:?}", cfg);
         panic!("Invalid Widget Config");

@@ -1,3 +1,4 @@
+mod battery;
 mod from_config;
 mod image_button;
 mod memory;

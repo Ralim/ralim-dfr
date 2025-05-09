@@ -31,6 +31,7 @@ freedesktop-icons = "0.4.0"
 chrono = { version = "0.4", features = ["unstable-locales"] }
 pure-rust-locales = "0.8"
 procfs = "0.17.0"
+starship-battery = "0.10.1"
 
 [build-dependencies]
 pkg-config = "0.3"
