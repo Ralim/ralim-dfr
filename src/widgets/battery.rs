@@ -52,7 +52,7 @@ impl TWidget for BatteryWidget {
                     starship_battery::State::Full => {}
                 }
 
-                let text = format!("{}%", soc.value * 100.0);
+                let text = format!("{:2.1}%", soc.value * 100.0);
 
                 let text_extent = c.text_extents(&text).unwrap();
                 c.move_to(
