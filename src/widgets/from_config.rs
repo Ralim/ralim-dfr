@@ -1,6 +1,6 @@
 use super::{
-    battery::BatteryWidget, image_button::ImageButton, memory::MemoryWidget,
-    processor::ProcessorWidget, TWidget, TextButton, TimeWidget,
+    TWidget, TextButton, TimeWidget, battery::BatteryWidget, image_button::ImageButton,
+    memory::MemoryWidget, processor::ProcessorWidget,
 };
 use crate::config::ButtonConfig;
 

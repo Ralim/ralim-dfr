@@ -1,5 +1,5 @@
 #![allow(non_upper_case_globals)]
-use std::ffi::{c_char, c_int, CStr, CString};
+use std::ffi::{CStr, CString, c_char, c_int};
 use std::ptr;
 
 #[repr(C)]
@@ -115,7 +115,7 @@ impl Drop for Pattern {
     }
 }
 
-extern "C" {
+unsafe extern "C" {
     fn FcInitLoadConfigAndFonts() -> *const FcConfig;
     fn FcConfigDestroy(_: *const FcConfig);
     fn FcNameParse(_: *const c_char) -> *const FcPattern;

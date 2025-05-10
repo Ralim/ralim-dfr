@@ -58,7 +58,9 @@ fn load_font(name: &str) -> FontFace {
     fontconfig.perform_substitutions(&mut pattern);
     let pat_match = match fontconfig.match_pattern(&pattern) {
         Ok(pat) => pat,
-        Err(_) => panic!("Unable to find specified font. If you are using the default config, make sure you have at least one font installed")
+        Err(_) => panic!(
+            "Unable to find specified font. If you are using the default config, make sure you have at least one font installed"
+        ),
     };
     let file_name = pat_match.get_file_name();
     let file_idx = pat_match.get_font_index();

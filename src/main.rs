@@ -3,17 +3,17 @@ use cairo::{Format, ImageSurface};
 use constants::TIMEOUT_MS;
 use drm::control::ClipRect;
 use input::{
+    Device as InputDevice, Libinput, LibinputInterface,
     event::{
+        Event, EventTrait,
         device::DeviceEvent,
         keyboard::{KeyState, KeyboardEvent, KeyboardEventTrait},
         touch::{TouchEvent, TouchEventPosition, TouchEventSlot},
-        Event, EventTrait,
     },
-    Device as InputDevice, Libinput, LibinputInterface,
 };
-use input_linux::{uinput::UInputHandle, EventKind, Key};
+use input_linux::{EventKind, Key, uinput::UInputHandle};
 use input_linux_sys::{input_event, input_id, timeval, uinput_setup};
-use libc::{c_char, O_ACCMODE, O_RDONLY, O_RDWR, O_WRONLY};
+use libc::{O_ACCMODE, O_RDONLY, O_RDWR, O_WRONLY, c_char};
 use nix::{
     errno::Errno,
     sys::{

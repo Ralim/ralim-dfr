@@ -4,7 +4,7 @@ use super::TWidget;
 use crate::{button_image::ButtonImage, constants::ICON_SIZE, graphics_load::try_load_image};
 use cairo::Context;
 use input_linux::Key;
-use librsvg_rebind::{prelude::HandleExt, Rectangle};
+use librsvg_rebind::{Rectangle, prelude::HandleExt};
 
 pub struct ImageButton {
     pub image: ButtonImage,

@@ -1,8 +1,8 @@
 use crate::config::Config;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use input::event::{
-    switch::{Switch, SwitchEvent, SwitchState},
     Event,
+    switch::{Switch, SwitchEvent, SwitchState},
 };
 use std::{
     cmp::min,

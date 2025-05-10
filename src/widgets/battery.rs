@@ -3,7 +3,6 @@ use input_linux::Key;
 use starship_battery::Manager;
 use std::time::{Duration, Instant};
 
-
 use super::TWidget;
 
 pub struct BatteryWidget {

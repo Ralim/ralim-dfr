@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use cairo::{Antialias, Context, Format, ImageSurface};
 use freedesktop_icons::lookup;
 use librsvg_rebind::Handle;

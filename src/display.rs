@@ -1,13 +1,13 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use drm::{
+    ClientCapability, Device as DrmDevice,
     buffer::DrmFourcc,
     control::{
-        atomic, connector,
+        AtomicCommitFlags, ClipRect, Device as ControlDevice, Mode, ResourceHandle, atomic,
+        connector,
         dumbbuffer::{DumbBuffer, DumbMapping},
-        framebuffer, property, AtomicCommitFlags, ClipRect, Device as ControlDevice, Mode,
-        ResourceHandle,
+        framebuffer, property,
     },
-    ClientCapability, Device as DrmDevice,
 };
 use std::{
     fs::{self, File, OpenOptions},

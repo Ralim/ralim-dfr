@@ -2,7 +2,7 @@ use crate::{
     config::{ButtonConfig, Config},
     constants::{BUTTON_COLOR_ACTIVE, BUTTON_COLOR_INACTIVE, BUTTON_SPACING_PX},
     pixel_shift::PIXEL_SHIFT_WIDTH_PX,
-    widgets::{new_widget_from_config, TWidget},
+    widgets::{TWidget, new_widget_from_config},
 };
 use cairo::{Context, Surface};
 use drm::control::ClipRect;
