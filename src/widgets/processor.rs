@@ -45,10 +45,17 @@ impl TWidget for ProcessorWidget {
             let scaled_bg = (self.last_cpu_readings.idle as f64) / 100.0;
             c.set_source_rgb(1.0, scaled_bg, scaled_bg);
         }
-
+        let other_usage = 100_u8.saturating_sub(
+            self.last_cpu_readings.user
+                + self.last_cpu_readings.system
+                + self.last_cpu_readings.idle,
+        );
         let text = format!(
-            "U: {}% S: {}% I: {}%",
-            self.last_cpu_readings.user, self.last_cpu_readings.system, self.last_cpu_readings.idle
+            "{}%/{}%/{}%/{}%",
+            self.last_cpu_readings.user,
+            self.last_cpu_readings.system,
+            other_usage,
+            self.last_cpu_readings.idle
         );
 
         let text_extent = c.text_extents(&text).unwrap();
