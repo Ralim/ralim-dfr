@@ -40,10 +40,11 @@ impl TWidget for BatteryWidget {
             if let Some(battery) = batteries.filter_map(|b| b.ok()).next() {
                 let soc = battery.state_of_charge();
                 if soc.value < 0.2 {
-                    c.set_source_rgb(1.0, 0.1, 0.1);
+                    c.set_source_rgb(1.0, 0.0, 0.0);
                 } else if soc.value < 0.5 {
                     c.set_source_rgb(1.0, 0.5, 0.5);
                 }
+
                 match battery.state() {
                     starship_battery::State::Unknown => {}
                     starship_battery::State::Charging => c.set_source_rgb(0.0, 1.0, 0.0),
@@ -51,8 +52,13 @@ impl TWidget for BatteryWidget {
                     starship_battery::State::Empty => {}
                     starship_battery::State::Full => {}
                 }
+                let dir_sym = if battery.state() == starship_battery::State::Charging {
+                    "+"
+                } else {
+                    ""
+                };
 
-                let text = format!("{:2.1}%", soc.value * 100.0);
+                let text = format!("{:2.0}%{}", soc.value * 100.0, dir_sym);
 
                 let text_extent = c.text_extents(&text).unwrap();
                 c.move_to(
