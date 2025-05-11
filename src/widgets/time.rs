@@ -39,26 +39,10 @@ impl TWidget for TimeWidget {
     ) {
         let current_time = Local::now();
         let current_locale = Locale::try_from(self.locale.as_str()).unwrap_or(Locale::POSIX);
-        let formatted_time = if self.format == "24hr" {
-            format!(
-                "{}:{}    {} {} {}",
-                current_time.format_localized("%H", current_locale),
-                current_time.format_localized("%M", current_locale),
-                current_time.format_localized("%a", current_locale),
-                current_time.format_localized("%-e", current_locale),
-                current_time.format_localized("%b", current_locale),
-            )
-        } else {
-            format!(
-                "{}:{} {}    {} {} {}",
-                current_time.format_localized("%-l", current_locale),
-                current_time.format_localized("%M", current_locale),
-                current_time.format_localized("%p", current_locale),
-                current_time.format_localized("%a", current_locale),
-                current_time.format_localized("%-e", current_locale),
-                current_time.format_localized("%b", current_locale)
-            )
-        };
+        let formatted_time = current_time
+            .format_localized(&self.format, current_locale)
+            .to_string();
+
         let time_extents = c.text_extents(&formatted_time).unwrap();
         c.move_to(
             button_left_edge + (button_width as f64 / 2.0 - time_extents.width() / 2.0).round(),

@@ -62,18 +62,18 @@ PrimaryLayerKeys = [
     # https://docs.rs/input-linux/latest/input_linux/enum.Key.html
     # Note that the escape key is not specified here, as it is added
     # automatically on Macs without a physical one
-    { Text = "F1",  Action = "F1"  },
-    { Text = "F2",  Action = "F2"  },
-    { Text = "F3",  Action = "F3"  },
-    { Text = "F4",  Action = "F4"  },
-    { Text = "F5",  Action = "F5"  },
-    { Text = "F6",  Action = "F6"  },
-    { Text = "F7",  Action = "F7"  },
-    { Text = "F8",  Action = "F8"  },
-    { Text = "F9",  Action = "F9"  },
+    { Text = "F1", Action = "F1" },
+    { Text = "F2", Action = "F2" },
+    { Text = "F3", Action = "F3" },
+    { Text = "F4", Action = "F4" },
+    { Text = "F5", Action = "F5" },
+    { Text = "F6", Action = "F6" },
+    { Text = "F7", Action = "F7" },
+    { Text = "F8", Action = "F8" },
+    { Text = "F9", Action = "F9" },
     { Text = "F10", Action = "F10" },
     { Text = "F11", Action = "F11" },
-    { Text = "F12", Action = "F12" }
+    { Text = "F12", Action = "F12" },
 
     # Example with Stretch:
     # # because most buttons have stretch 2, they behave as if they all had 1:
@@ -92,31 +92,26 @@ PrimaryLayerKeys = [
     # { Text = "F11", Action = "F11", Stretch = 2 },
     # { Text = "F12", Action = "F12", Stretch = 2 }
 
-    # Example of Time:
-    # { Time = "12hr",  Action = "Time"},
+    # Example of Time, use time format string
+    # { Time = "%H:%M",  Action = "Time"},
     # Example of Time with locale:
-    # { Time = "12hr",  Locale = "en_IN", Action = "Time"},
-    # Example of Time with stretch:
-    # # the time key by default will be 3 times wider than the rest keys.
-    # # So the stretch value assigned will be 3 times the regular keys.
-    # { Time = "12hr",  Action = "Time", Stretch = 2},
-    # # Here, time key will be 3x2=6 times the normal keys.
+    # { Time = "%H:%M",  Locale = "en_IN", Action = "Time"},
 ]
 
 # This key defines the contents of the media key layer
 MediaLayerKeys = [
-    { Icon = "brightness_low",  Action = "BrightnessDown" },
-    { Icon = "brightness_high", Action = "BrightnessUp"   },
-    { Icon = "mic_off",         Action = "MicMute"        },
-    { Icon = "search",          Action = "Search"         },
-    { Icon = "backlight_low",   Action = "IllumDown"      },
-    { Icon = "backlight_high",  Action = "IllumUp"        },
-    { Icon = "fast_rewind",     Action = "PreviousSong"   },
-    { Icon = "play_pause",      Action = "PlayPause"      },
-    { Icon = "fast_forward",    Action = "NextSong"       },
-    { Icon = "volume_off",      Action = "Mute"           },
-    { Icon = "volume_down",     Action = "VolumeDown"     },
-    { Icon = "volume_up",       Action = "VolumeUp"       }
+    { Icon = "brightness_low", Action = "BrightnessDown" },
+    { Icon = "brightness_high", Action = "BrightnessUp" },
+    { Icon = "mic_off", Action = "MicMute" },
+    { Icon = "search", Action = "Search" },
+    { Icon = "backlight_low", Action = "IllumDown" },
+    { Icon = "backlight_high", Action = "IllumUp" },
+    { Icon = "fast_rewind", Action = "PreviousSong" },
+    { Icon = "play_pause", Action = "PlayPause" },
+    { Icon = "fast_forward", Action = "NextSong" },
+    { Icon = "volume_off", Action = "Mute" },
+    { Icon = "volume_down", Action = "VolumeDown" },
+    { Icon = "volume_up", Action = "VolumeUp" },
 
     # Example with XDG icons (requires `breeze-dark` theme installed):
     # { Icon = "brightness-low",       Theme = "breeze-dark", Action = "BrightnessDown" },
