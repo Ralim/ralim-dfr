@@ -26,12 +26,9 @@ impl FunctionLayer {
                 .scan(&mut virtual_button_count, |state, cfg| {
                     let i = **state;
                     let mut stretch = cfg.stretch.unwrap_or(1);
-                    if stretch < 1 {
-                        println!("Stretch value must be at least 1, setting to 1.");
+                    if stretch < 1 || stretch > 10 {
+                        println!("Stretch value must be at >0,<10");
                         stretch = 1;
-                    }
-                    if cfg.time.is_some() {
-                        stretch *= 2;
                     }
                     **state += stretch;
                     Some((i, new_widget_from_config(cfg)))
