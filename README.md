@@ -1,9 +1,11 @@
 # ralim-dfr
+
 A fork of `tiny-dfr`, a slightly less basic dynamic function row. (But still very minimal).
-
-
+This is highly opinionated for what I want at the moment, as I'm largely toying with it.
+This should always remain "working" and ofc issues are welcome for feature ideas.
 
 ## Dependencies
+
 cairo, libinput, freetype, fontconfig, librsvg 2.59 or later, uinput enabled in kernel config
 
 Install the following packages on Fedora:
@@ -11,15 +13,15 @@ Install the following packages on Fedora:
 ```
 dnf install -y glib2-devel cairo-devel pango-devel cairo-gobject-devel libinput-devel gdk-pixbuf2-devel systemd-devel
 ```
+
 ## License
 
 `ralim-dfr` is forked from `tiny-dfr` and is licensed in the same manner.
 All rights to changes are released to public domain and you are free to use as you wish within the license.
 
-
 ralim-dfr is licensed under the MIT license, as included in the [LICENSE](LICENSE) file.
 
-* Copyright The Asahi Linux Contributors
+- Copyright The Asahi Linux Contributors
 
 Please see the Git history for authorship information.
 
