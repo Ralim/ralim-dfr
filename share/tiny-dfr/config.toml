@@ -2,10 +2,6 @@
 # copy it to /etc/tiny-dfr/config.toml and edit that copy.
 # The daemon will merge those two files, giving preference to the one in /etc
 
-# F{number} keys are shown when Fn is not pressed by default.
-# Set this to true if you want the media keys to be shown without Fn pressed
-MediaLayerDefault = false
-
 # Set this to false if you want to hide the button outline,
 # leaving only the text/logo
 ShowButtonOutlines = true
@@ -36,7 +32,7 @@ AdaptiveBrightness = true
 ActiveBrightness = 128
 
 # This key defines the contents of the primary layer
-# (the one with F{number} keys)
+# (the one with F{number} keys/Shown by default)
 # You can change the individual buttons, add, or remove them
 # Any number of keys that is greater than 0 is allowed
 # however rendering will start to break around 24 keys
@@ -98,8 +94,8 @@ PrimaryLayerKeys = [
     # { Time = "%H:%M",  Locale = "en_IN", Action = "Time"},
 ]
 
-# This key defines the contents of the media key layer
-MediaLayerKeys = [
+# This key defines the contents of the layer shown when Fn is held
+FnLayerKeys = [
     { Icon = "brightness_low", Action = "BrightnessDown" },
     { Icon = "brightness_high", Action = "BrightnessUp" },
     { Icon = "mic_off", Action = "MicMute" },
