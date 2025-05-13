@@ -26,7 +26,7 @@ impl FunctionLayer {
                 .scan(&mut virtual_button_count, |state, cfg| {
                     let i = **state;
                     let mut stretch = cfg.stretch.unwrap_or(1);
-                    if stretch < 1 || stretch > 10 {
+                    if !(1..=10).contains(&stretch) {
                         println!("Stretch value must be at >0,<10");
                         stretch = 1;
                     }
