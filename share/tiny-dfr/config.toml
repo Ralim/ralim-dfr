@@ -30,6 +30,8 @@ AdaptiveBrightness = true
 # With it enabled, this is the maximum point on the brightness curve
 # Accepted values are 0-255
 ActiveBrightness = 128
+DimBrightness = 1
+OffBrightness = 0
 
 # This key defines the contents of the primary layer
 # (the one with F{number} keys/Shown by default)

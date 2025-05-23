@@ -16,7 +16,6 @@ const MAX_DISPLAY_BRIGHTNESS: u32 = 509;
 const MAX_TOUCH_BAR_BRIGHTNESS: u32 = 255;
 const BRIGHTNESS_DIM_TIMEOUT: Duration = Duration::from_secs(15); // should be a multiple of TIMEOUT_MS
 const BRIGHTNESS_OFF_TIMEOUT: Duration = Duration::from_secs(60); // should be a multiple of TIMEOUT_MS
-const DIMMED_BRIGHTNESS: u32 = 1;
 
 fn read_attr(path: &Path, attr: &str) -> u32 {
     fs::read_to_string(path.join(attr))
@@ -129,9 +128,9 @@ impl BacklightManager {
                     cfg.active_brightness
                 }
             } else if since_last_active < BRIGHTNESS_OFF_TIMEOUT {
-                DIMMED_BRIGHTNESS
+                cfg.dim_brightness
             } else {
-                0
+                cfg.off_brightness
             },
         );
         if self.current_bl != new_bl {

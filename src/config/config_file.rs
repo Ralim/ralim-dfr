@@ -16,9 +16,12 @@ use super::{USER_CFG_PATH, config_struct::Config, widget::ButtonConfig};
 struct ConfigProxy {
     show_button_outlines: Option<bool>,
     enable_pixel_shift: Option<bool>,
+
     font_template: Option<String>,
     adaptive_brightness: Option<bool>,
     active_brightness: Option<u32>,
+    dim_brightness: Option<u32>,
+    off_brightness: Option<u32>,
     primary_layer_keys: Option<Vec<ButtonConfig>>,
     fn_layer_keys: Option<Vec<ButtonConfig>>,
 }
@@ -38,6 +41,8 @@ pub fn load_config(width: u16) -> (Config, [FunctionLayer; 2]) {
         base.fn_layer_keys = user.fn_layer_keys.or(base.fn_layer_keys);
         base.primary_layer_keys = user.primary_layer_keys.or(base.primary_layer_keys);
         base.active_brightness = user.active_brightness.or(base.active_brightness);
+        base.dim_brightness = user.dim_brightness.or(base.dim_brightness);
+        base.off_brightness = user.off_brightness.or(base.off_brightness);
     };
     let mut media_layer_keys = base.fn_layer_keys.unwrap();
     let mut primary_layer_keys = base.primary_layer_keys.unwrap();
@@ -70,6 +75,8 @@ pub fn load_config(width: u16) -> (Config, [FunctionLayer; 2]) {
         adaptive_brightness: base.adaptive_brightness.unwrap(),
         font_face: load_font(&base.font_template.unwrap()),
         active_brightness: base.active_brightness.unwrap(),
+        dim_brightness: base.dim_brightness.unwrap(),
+        off_brightness: base.off_brightness.unwrap(),
     };
     (cfg, [primary_layer, fn_layer])
 }

@@ -6,4 +6,6 @@ pub struct Config {
     pub font_face: FontFace,
     pub adaptive_brightness: bool,
     pub active_brightness: u32,
+    pub dim_brightness: u32,
+    pub off_brightness: u32,
 }
