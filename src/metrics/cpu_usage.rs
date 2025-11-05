@@ -23,8 +23,8 @@ impl CPUUsage {
     pub fn sample(&mut self) -> CPUSample {
         let new_sample = Self::take_stats();
         let mut measurements = CPUSample::default();
-        if let Some(old_reading) = &self.last_cpu {
-            if let Some(new_readings) = &new_sample {
+        if let Some(old_reading) = &self.last_cpu
+            && let Some(new_readings) = &new_sample {
                 let ticks_passed = Self::total_time(new_readings) - Self::total_time(old_reading);
                 if ticks_passed > 0 {
                     measurements.idle = ((new_readings.idle.saturating_sub(old_reading.idle) * 100)
@@ -74,7 +74,6 @@ impl CPUUsage {
                         / ticks_passed) as u8;
                 }
             }
-        }
         self.last_cpu = new_sample;
         measurements
     }

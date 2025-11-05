@@ -36,8 +36,8 @@ impl TWidget for BatteryWidget {
         button_width: u64,
         y_shift: f64,
     ) {
-        if let Ok(batteries) = self.manager.batteries() {
-            if let Some(battery) = batteries.filter_map(|b| b.ok()).next() {
+        if let Ok(batteries) = self.manager.batteries()
+            && let Some(battery) = batteries.filter_map(|b| b.ok()).next() {
                 let soc = battery.state_of_charge();
                 if soc.value < 0.2 {
                     c.set_source_rgb(1.0, 0.0, 0.0);
@@ -69,7 +69,6 @@ impl TWidget for BatteryWidget {
                 c.show_text(&text).unwrap();
                 self.last_draw_time = Instant::now();
             }
-        }
     }
     fn set_active(&mut self, active: bool) -> bool {
         if self.active != active {
